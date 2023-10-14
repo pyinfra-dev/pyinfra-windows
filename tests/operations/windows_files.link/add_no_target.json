@@ -1,0 +1,15 @@
+{
+    "args": [
+        "testlink"
+    ],
+    "kwargs": {},
+    "facts": {
+        "windows_files.Link": {
+            "path=testlink": null
+        }
+    },
+    "exception": {
+        "name": "OperationError",
+        "message": "If present is True target must be provided"
+    }
+}
