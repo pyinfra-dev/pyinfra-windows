@@ -9,15 +9,14 @@ from datetime import timedelta
 from pyinfra import host, state
 from pyinfra.api import FileUploadCommand, OperationError, OperationTypeError, operation
 from pyinfra.api.util import get_file_sha1
-from pyinfra.facts.windows import Date
-from pyinfra.facts.windows_files import Directory, File, Link, Md5File, Sha1File, Sha256File
+
+from pyinfra_windows.facts.windows import Date
+from pyinfra_windows.facts.files import Directory, File, Link, Md5File, Sha1File, Sha256File
 
 from .util.files import ensure_mode_int
 
 
-@operation(
-    pipeline_facts={"file": "dest"},
-)
+@operation()
 def download(
     src,
     dest,
@@ -128,12 +127,7 @@ def download(
         host.noop("file {0} has already been downloaded".format(dest))
 
 
-@operation(
-    pipeline_facts={
-        "file": "dest",
-        "sha1_file": "dest",
-    },
-)
+@operation()
 def put(
     src,
     dest,
@@ -253,9 +247,7 @@ def put(
                 host.noop("file {0} is already uploaded".format(dest))
 
 
-@operation(
-    pipeline_facts={"windows_file": "name"},
-)
+@operation()
 def file(
     path,
     present=True,
@@ -343,18 +335,16 @@ def _create_remote_dir(state, host, remote_filename, user, group):
     # Always use POSIX style path as local might be Windows, remote always *nix
     remote_dirname = ntpath.dirname(remote_filename)
     if remote_dirname:
-        yield from directory(
+        yield from directory._inner(
             remote_dirname,
-            state=state,
-            host=host,
+            #state=state, # TODO not sure why these args are here
+            #host=host,
             user=user,
             group=group,
         )
 
 
-@operation(
-    pipeline_facts={"windows_directory": "name"},
-)
+@operation()
 def directory(
     path,
     present=True,
@@ -452,9 +442,7 @@ def _validate_path(path):
         raise OperationTypeError("`path` must be a string or `os.PathLike` object")
 
 
-@operation(
-    pipeline_facts={"link": "path"},
-)
+@operation()
 def link(
     path,
     target=None,

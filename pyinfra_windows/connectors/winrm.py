@@ -43,7 +43,8 @@ from pyinfra import logger
 from pyinfra.api.exceptions import ConnectError, PyinfraError
 from pyinfra.api.util import get_file_io, memoize, sha1_hash
 
-from .base import BaseConnector, make_keys
+from pyinfra.connectors.base import BaseConnector
+from pyinfra.connectors.util import read_output_buffers
 from .pyinfrawinrmsession import PyinfraWinrmSession
 from .util import make_win_command
 
@@ -58,7 +59,18 @@ class DataKeys:
     operation_timeout_sec = "Operation timeout in seconds (default: ``20``)"
 
 
-DATA_KEYS = make_keys("winrm", DataKeys)
+# TODO not sure where this logic should live
+def _make_keys(keys_prefix, cls):
+        class Keys:
+            pass
+
+        for key in cls.__dict__:
+            if not key.startswith("_"):
+                setattr(Keys, key, f"{keys_prefix}_{key}")
+
+        return Keys
+
+DATA_KEYS = _make_keys("winrm", DataKeys)
 
 
 def _raise_connect_error(host, message, data):
@@ -99,6 +111,11 @@ def _make_winrm_kwargs(state, host):
 
 
 class WinRMConnector(BaseConnector):
+
+    handles_execution = True
+
+    session = None
+
     @staticmethod
     def make_names_data(hostname):
         show_warning()
@@ -134,7 +151,7 @@ class WinRMConnector(BaseConnector):
                 read_timeout_sec=kwargs["winrm_read_timeout_sec"],
                 operation_timeout_sec=kwargs["winrm_operation_timeout_sec"],
             )
-
+            self.session = session
             return session
 
         # TODO: add exceptions here
@@ -158,7 +175,7 @@ class WinRMConnector(BaseConnector):
         success_exit_codes=None,
         print_output=False,
         print_input=False,
-        return_combined_output=False,
+        #return_combined_output=False, # TODO now always return combined
         shell_executable=None,
         **ignored_command_kwargs,
     ):
@@ -203,9 +220,9 @@ class WinRMConnector(BaseConnector):
 
         # we use our own subclassed session that allows for env setting from open_shell.
         if shell_executable in ["cmd"]:
-            response = self.host.connection.run_cmd(tmp_command, env=env)  # type: ignore
+            response = self.host.connector.session.run_cmd(tmp_command, env=env)  # type: ignore
         else:
-            response = self.host.connection.run_ps(tmp_command, env=env)  # type: ignore
+            response = self.host.connector.session.run_ps(tmp_command, env=env)  # type: ignore
 
         return_code = response.status_code
         logger.debug("response:%s", response)
@@ -233,12 +250,14 @@ class WinRMConnector(BaseConnector):
 
         logger.debug("Command exit status: %s", status)
 
-        if return_combined_output:
-            std_out = [("stdout", line) for line in std_out]
-            std_err = [("stderr", line) for line in std_err]
-            return status, std_out + std_err
+        combined_output = read_output_buffers(
+                std_out, std_err,
+                timeout=None, # TODO need to take timeout in
+                print_output=print_output,
+                print_prefix=self.host.print_prefix,)
 
-        return status, std_out, std_err
+        return status, combined_output
+
 
     def get_file(
         state, host, remote_filename, filename_or_io, remote_temp_filename=None, **command_kwargs

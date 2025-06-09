@@ -3,11 +3,15 @@
         "http://myfile"
     ],
     "kwargs": {
-        "dest": "c:\\myfile"
+        "dest": "c:\\myfile",
+        "cache_time": 3600
     },
     "facts": {
-        "windows_files.File": {
-            "path=c:\\myfile": null
+        "windows.Date": "datetime:2015-01-01T00:00:00",
+        "files.File": {
+            "path=c:\\myfile": {
+                "mtime": "datetime:2015-01-01T00:00:00"
+            }
         }
     },
     "commands": [

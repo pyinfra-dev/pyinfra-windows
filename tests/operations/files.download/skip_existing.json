@@ -6,7 +6,7 @@
         "dest": "c:\\myfile"
     },
     "facts": {
-        "windows_files.File": {
+        "files.File": {
             "path=c:\\myfile": {}
         }
     },

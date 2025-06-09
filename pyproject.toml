@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+version = "0.0.1"
+name = "pyinfra-windows"
+description = ""
+requires-python = ">=3.8"
+dependencies = [
+  "pyinfra==3.0.2"
+]
+
+[project.entry-points."pyinfra.connectors"]
+winrm = "pyinfra_windows.connectors.winrm:WinRMConnector"
+
+[tool.hatch.build.targets.wheel]
+  packages = ["pyinfra_windows/"]
+
+[tool.hatch.envs.test]
+dependencies = [
+  "pyinfra",
+  "pytest"
+]
+
+[tool.hatch.envs.test.scripts]
+all = "pytest"

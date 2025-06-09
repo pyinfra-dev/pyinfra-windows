@@ -220,8 +220,8 @@ class Where(FactBase):
     shell_executable = "cmd"
 
     @staticmethod
-    def command(name):
-        return "where {0}".format(name)
+    def command(command):
+        return "where {0}".format(command)
 
     @staticmethod
     def process(output):
@@ -311,8 +311,8 @@ class Service(FactBase):
     Returns info about a Windows service.
     """
 
-    def command(self, name):
-        return "Get-Service -Name {} | Format-List -Property *".format(name)
+    def command(self, service):
+        return "Get-Service -Name {} | Format-List -Property *".format(service)
 
     def process(self, output):
         return _format_windows_for_key("Name", output, return_primary_key=False)

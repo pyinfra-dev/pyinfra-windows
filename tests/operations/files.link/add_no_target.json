@@ -4,7 +4,7 @@
     ],
     "kwargs": {},
     "facts": {
-        "windows_files.Link": {
+        "files.Link": {
             "path=testlink": null
         }
     },

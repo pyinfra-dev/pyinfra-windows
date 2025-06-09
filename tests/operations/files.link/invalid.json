@@ -6,7 +6,7 @@
         "target": "c:\\testlink"
     },
     "facts": {
-        "windows_files.Link": {
+        "files.Link": {
             "path=testlink": false
         }
     },
