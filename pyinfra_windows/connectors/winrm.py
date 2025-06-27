@@ -3,7 +3,7 @@
     This connector is in alpha and may change in future releases.
 
 Some Windows facts and Windows operations work but this is to be considered
-experimental. For now, only ``winrm_username`` and ``winrm_password`` is
+experimental. For now, only ``username`` and ``password`` is
 being used. There are other methods for authentication, but they have not yet
 been added/experimented with.
 
@@ -14,63 +14,61 @@ Examples using ``@winrm``:
 .. code:: python
 
     # Get the windows_home fact
-    pyinfra @winrm/192.168.3.232 --winrm-username vagrant \\
-        --winrm-password vagrant --winrm-port 5985 -vv --debug fact windows_home
+    pyinfra @winrm/192.168.3.232 --user vagrant \\
+        --password vagrant --port 5985 -vv --debug fact windows_home
 
     # Create a directory
-    pyinfra @winrm/192.168.3.232 --winrm-username vagrant \\
-        --winrm-password vagrant --winrm-port 5985 windows_files.windows_directory 'c:\temp'
+    pyinfra @winrm/192.168.3.232 --user vagrant \\
+        --password vagrant --port 5985 windows_files.windows_directory 'c:\temp'
 
     # Run a powershell command ('ps' is the default shell-executable for the winrm connector)
-    pyinfra @winrm/192.168.3.232 --winrm-username vagrant \\
-        --winrm-password vagrant --winrm-port 5985 exec -- write-host hello
+    pyinfra @winrm/192.168.3.232 --user vagrant \\
+        --password vagrant --port 5985 exec -- write-host hello
 
     # Run a command using the command prompt:
-    pyinfra @winrm/192.168.3.232 --winrm-username vagrant \\
-        --winrm-password vagrant --winrm-port 5985 --shell-executable cmd exec -- date /T
+    pyinfra @winrm/192.168.3.232 --user vagrant \\
+        --password vagrant --port 5985 --shell-executable cmd exec -- date /T
 
     # Run a command using the winrm ntlm transport
-    pyinfra @winrm/192.168.3.232 --winrm-username vagrant \\
-        --winrm-password vagrant --winrm-port 5985 --winrm-transport ntlm exec -- hostname
+    pyinfra @winrm/192.168.3.232 --user vagrant \\
+        --password vagrant --port 5985 --winrm-transport ntlm exec -- hostname
 """
 
 import base64
 import ntpath
 
 import click
+from typing_extensions import TypedDict
 
 from pyinfra import logger
 from pyinfra.api.exceptions import ConnectError, PyinfraError
 from pyinfra.api.util import get_file_io, memoize, sha1_hash
 
-from pyinfra.connectors.base import BaseConnector
+from pyinfra.connectors.base import BaseConnector, DataMeta
 from pyinfra.connectors.util import read_output_buffers
 from .pyinfrawinrmsession import PyinfraWinrmSession
 from .util import make_win_command
 
 
-class DataKeys:
-    hostname = "WinRM hostname to connect to"
-    port = "WinRM port to connect to"
-    user = "WinRM username"
-    password = "WinRM password"
-    transport = "WinRM transport (default: ``plaintext``)"
-    read_timeout_sec = "Read timeout in seconds (default: ``30``)"
-    operation_timeout_sec = "Operation timeout in seconds (default: ``20``)"
+class ConnectorData(TypedDict):
+    winrm_hostname: str
+    port: int
+    winrm_user: str
+    password: str
+    transport: str
+    read_timeout_sec: int
+    operation_timeout_sec: int
 
 
-# TODO not sure where this logic should live
-def _make_keys(keys_prefix, cls):
-        class Keys:
-            pass
-
-        for key in cls.__dict__:
-            if not key.startswith("_"):
-                setattr(Keys, key, f"{keys_prefix}_{key}")
-
-        return Keys
-
-DATA_KEYS = _make_keys("winrm", DataKeys)
+connector_data_meta: dict[str, DataMeta] = {
+    "winrm_hostname": DataMeta("WinRM hostname to connect to"),
+    "port": DataMeta("WinRM port to connect to"),
+    "winrm_user": DataMeta("WinrRM username"),
+    "password": DataMeta("WinRM password"),
+    "transport": DataMeta("WinRM transport"),
+    "read_timeout_sec": DataMeta("Read timeout in seconds"),
+    "operation_timeout_sec": DataMeta("Operation timeout in seconds"),
+}
 
 
 def _raise_connect_error(host, message, data):
@@ -85,19 +83,19 @@ def show_warning():
 
 def _make_winrm_kwargs(state, host):
     kwargs = {}
-
     for key, value in (
-        ("username", host.data.get(DATA_KEYS.user)),
-        ("password", host.data.get(DATA_KEYS.password)),
-        ("winrm_port", int(host.data.get(DATA_KEYS.port, 0))),
-        ("winrm_transport", host.data.get(DATA_KEYS.transport, "plaintext")),
+        ("hostname", host.data.get("winrm_hostname")),
+        ("username", host.data.get("ssh_user")),
+        ("password", host.data.get("ssh_password")),
+        ("port", int(host.data.get("port", 0))),
+        ("winrm_transport", host.data.get("transport", "plaintext")),
         (
             "winrm_read_timeout_sec",
-            host.data.get(DATA_KEYS.read_timeout_sec, 30),
+            host.data.get("read_timeout_sec", 30),
         ),
         (
             "winrm_operation_timeout_sec",
-            host.data.get(DATA_KEYS.operation_timeout_sec, 20),
+            host.data.get("operation_timeout_sec", 20),
         ),
     ):
         if value:
@@ -116,6 +114,10 @@ class WinRMConnector(BaseConnector):
 
     session = None
 
+    data: ConnectorData
+    data_cls = ConnectorData
+    data_meta = connector_data_meta
+
     @staticmethod
     def make_names_data(hostname):
         show_warning()
@@ -126,23 +128,23 @@ class WinRMConnector(BaseConnector):
         """
         Connect to a single host. Returns the winrm Session if successful.
         """
-
         kwargs = _make_winrm_kwargs(self.state, self.host)
         logger.debug("Connecting to: %s (%s)", self.host.name, kwargs)
 
         # Hostname can be provided via winrm config (alias), data, or the hosts name
         hostname = kwargs.pop(
             "hostname",
-            self.host.data.get(DATA_KEYS.hostname, self.host.name),
         )
 
         try:
             # Create new session
-            host_and_port = "{}:{}".format(hostname, self.host.data.get(DATA_KEYS.port))
-            logger.debug("host_and_port: %s", host_and_port)
+            port = self.host.data.get("port", 5986)
+            winrm_target = "{}".format(hostname)
+            logger.debug("winrm_target: %s", winrm_target)
+            logger.debug("winrm_user: %s", kwargs["username"])
 
             session = PyinfraWinrmSession(
-                host_and_port,
+                winrm_target,
                 auth=(
                     kwargs["username"],
                     kwargs["password"],
@@ -175,7 +177,7 @@ class WinRMConnector(BaseConnector):
         success_exit_codes=None,
         print_output=False,
         print_input=False,
-        #return_combined_output=False, # TODO now always return combined
+        # return_combined_output=False, # TODO now always return combined
         shell_executable=None,
         **ignored_command_kwargs,
     ):
@@ -251,16 +253,22 @@ class WinRMConnector(BaseConnector):
         logger.debug("Command exit status: %s", status)
 
         combined_output = read_output_buffers(
-                std_out, std_err,
-                timeout=None, # TODO need to take timeout in
-                print_output=print_output,
-                print_prefix=self.host.print_prefix,)
+            std_out,
+            std_err,
+            timeout=None,  # TODO need to take timeout in
+            print_output=print_output,
+            print_prefix=self.host.print_prefix,
+        )
 
         return status, combined_output
 
-
     def get_file(
-        state, host, remote_filename, filename_or_io, remote_temp_filename=None, **command_kwargs
+        state,
+        host,
+        remote_filename,
+        filename_or_io,
+        remote_temp_filename=None,
+        **command_kwargs,
     ):
         raise PyinfraError("Not implemented")
 
@@ -313,9 +321,14 @@ class WinRMConnector(BaseConnector):
             return False
 
         # Execute run_shell_command w/sudo and/or su_user
-        command = "Move-Item -Path {0} -Destination {1} -Force".format(temp_file, remote_filename)
+        command = "Move-Item -Path {0} -Destination {1} -Force".format(
+            temp_file, remote_filename
+        )
         status, _, stderr = self.run_shell_command(
-            command, print_output=print_output, print_input=print_input, **command_kwargs
+            command,
+            print_output=print_output,
+            print_input=print_input,
+            **command_kwargs,
         )
 
         if status is False:
