@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 version = "0.0.1"
 name = "pyinfra-windows"
 description = ""
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
   "pyinfra==3.0.2"
 ]
