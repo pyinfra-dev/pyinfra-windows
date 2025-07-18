@@ -34,11 +34,14 @@ Examples using ``@winrm``:
         --password vagrant --port 5985 --winrm-transport ntlm exec -- hostname
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 import base64
 import ntpath
 
 import click
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, Unpack
 
 from pyinfra import logger
 from pyinfra.api.exceptions import ConnectError, PyinfraError
@@ -48,6 +51,9 @@ from pyinfra.connectors.base import BaseConnector, DataMeta
 from pyinfra.connectors.util import read_output_buffers
 from .pyinfrawinrmsession import PyinfraWinrmSession
 from .util import make_win_command
+
+if TYPE_CHECKING:
+    from pyinfra.api.arguments import ConnectorArguments
 
 
 class ConnectorData(TypedDict):
@@ -109,7 +115,6 @@ def _make_winrm_kwargs(state, host):
 
 
 class WinRMConnector(BaseConnector):
-
     handles_execution = True
 
     session = None
@@ -173,32 +178,38 @@ class WinRMConnector(BaseConnector):
     def run_shell_command(
         self,
         command,
-        env=None,
-        success_exit_codes=None,
         print_output=False,
         print_input=False,
-        # return_combined_output=False, # TODO now always return combined
-        shell_executable=None,
-        **ignored_command_kwargs,
+        **arguments: Unpack["ConnectorArguments"],
     ):
         """
         Execute a command on the specified host.
 
         Args:
-            state (``pyinfra.api.State`` obj): state object for this command
-            hostname (string): hostname of the target
-            command (string): actual command to execute
-            success_exit_codes (list): all values in the list that will return success
-            print_output (boolean): print the output
-            print_intput (boolean): print the input
-            return_combined_output (boolean): combine the stdout and stderr lists
-            shell_executable (string): shell to use - 'cmd'=cmd, 'ps'=powershell(default)
-            env (dict): environment variables to set
+            command (str): actual command to execute.
+            print_output (bool): print the output.
+            print_intput (bool): print the input.
+
+        Keyword Args:
+            _env (Mapping[str, str]): Dictionary of environment variables to set.
+            _shell_executable (str): The shell executable to use for executing commands.
+            _success_exit_codes Iterable[int]: List of exit codes to consider a success.
 
         Returns:
             tuple: (exit_code, stdout, stderr)
             stdout and stderr are both lists of strings from each buffer.
         """
+        env = arguments.pop("_env", {})
+        shell_executable = arguments.pop("_shell_executable", None)
+        success_exit_codes = arguments.pop("_success_exit_codes", None)
+
+        # TODO implement
+        # * shell control features:
+        # https://docs.pyinfra.com/en/3.x/arguments.html#shell-control-features
+        # _chdir, _timeout, _get_pty, and _stdin
+
+        # * privilege & user escalation:
+        # https://docs.pyinfra.com/en/3.x/arguments.html#privilege-user-escalation
 
         command = make_win_command(command)
 
@@ -222,9 +233,9 @@ class WinRMConnector(BaseConnector):
 
         # we use our own subclassed session that allows for env setting from open_shell.
         if shell_executable in ["cmd"]:
-            response = self.host.connector.session.run_cmd(tmp_command, env=env)  # type: ignore
+            response = self.session.run_cmd(tmp_command, env=env)  # type: ignore
         else:
-            response = self.host.connector.session.run_ps(tmp_command, env=env)  # type: ignore
+            response = self.session.run_ps(tmp_command, env=env)  # type: ignore
 
         return_code = response.status_code
         logger.debug("response:%s", response)
@@ -244,7 +255,6 @@ class WinRMConnector(BaseConnector):
                 "{0}>>> {1}".format(self.host.print_prefix, "\n".join(std_out)),
                 err=True,
             )
-
         if success_exit_codes:
             status = return_code in success_exit_codes
         else:
@@ -259,7 +269,6 @@ class WinRMConnector(BaseConnector):
             print_output=print_output,
             print_prefix=self.host.print_prefix,
         )
-
         return status, combined_output
 
     def get_file(

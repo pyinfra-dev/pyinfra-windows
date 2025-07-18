@@ -9,11 +9,10 @@ from .util import make_inventory
 
 class TestWinrmConnector(TestCase):
     def setUp(self):
-        self.fake_connect_patch = patch("pyinfra_windows.connectors.winrm.WinRMConnector.connect")
+        self.fake_connect_patch = patch(
+            "pyinfra_windows.connectors.winrm.WinRMConnector.connect"
+        )
         self.fake_connect_mock = self.fake_connect_patch.start()
-
-        self.fake_session_patch = patch("pyinfra_windows.connectors.winrm.WinRMConnector.session")
-        self.fake_session_mock = self.fake_session_patch.start()
 
     def tearDown(self):
         self.fake_connect_patch.stop()
@@ -29,7 +28,10 @@ class TestWinrmConnector(TestCase):
     def test_connect_all_password(self):
         inventory = make_inventory(
             hosts=(
-                ("@winrm/somehost", {"winrm_username": "testuser", "winrm_password": "testpass"}),
+                (
+                    "@winrm/somehost",
+                    {"winrm_username": "testuser", "winrm_password": "testpass"},
+                ),
                 (
                     "@winrm/anotherhost",
                     {"winrm_username": "testuser2", "winrm_password": "testpass2"},
@@ -46,16 +48,14 @@ class TestWinrmConnector(TestCase):
 
         assert len(state.active_hosts) == 2
 
-    def test_run_shell_command(self):
-        fake_winrm_session = MagicMock()
+    @patch("pyinfra_windows.connectors.winrm.PyinfraWinrmSession")
+    def test_run_shell_command(self, fake_winrm_session):
+        p = patch("pyinfra_windows.connectors.winrm.WinRMConnector.session")
+        fake_session = p.start()
 
-        fake_winrm = MagicMock()
-        fake_stdin = MagicMock()
-        fake_stdout = MagicMock()
-        fake_winrm.run_cmd.return_value = fake_stdin, fake_stdout, MagicMock()
-
-        fake_winrm_session.return_value = fake_winrm
-
+        fake_resp = MagicMock()
+        fake_resp.status_code = 1
+        fake_session.run_ps.return_value = fake_resp
         inventory = make_inventory(hosts=("@winrm/somehost",))
         State(inventory, Config())
         host = inventory.get_host("@winrm/somehost")
@@ -63,17 +63,17 @@ class TestWinrmConnector(TestCase):
 
         command = "echo hi"
 
-        out = host.run_shell_command(command, stdin="hello", print_output=True)
+        out = host.run_shell_command(
+            command, print_output=True, _stdin="hello", _success_exit_codes=[1]
+        )
         assert len(out) == 2
 
         status, output = out
-        # TODO: assert status is True
+        assert status is True
 
         combined_out = host.run_shell_command(
             command,
             print_output=True,
-            return_combined_output=True,
         )
         assert len(combined_out) == 2
-
-        # TODO: fake_winrm.run_shell_command.assert_called_with("'echo hi'", get_pty=False)
+        fake_session.run_ps.assert_called_with("echo hi", env={})
