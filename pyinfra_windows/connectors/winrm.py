@@ -318,7 +318,7 @@ class WinRMConnector(BaseConnector):
         """
 
         # TODO: fix this? Workaround for circular import
-        from pyinfra.facts.windows_files import TempDir
+        from pyinfra_windows.facts.files import TempDir
 
         # Always use temp file here in case of failure
         temp_file = ntpath.join(

@@ -10,7 +10,7 @@ from pyinfra import host, state
 from pyinfra.api import FileUploadCommand, OperationError, OperationTypeError, operation
 from pyinfra.api.util import get_file_sha1
 
-from pyinfra_windows.facts.windows import Date
+from pyinfra_windows.facts.server import Date
 from pyinfra_windows.facts.files import Directory, File, Link, Md5File, Sha1File, Sha256File
 
 from .util.files import ensure_mode_int
