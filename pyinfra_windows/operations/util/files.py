@@ -64,7 +64,9 @@ def sed_replace(
 
     if not backup:  # if we're not backing up, remove the file *if* sed succeeds
         backup_filename = "{0}.{1}".format(filename, backup_extension)
-        sed_command = StringCommand(sed_command, "&&", "rm", "-f", QuoteString(backup_filename))
+        sed_command = StringCommand(
+            sed_command, "&&", "rm", "-f", QuoteString(backup_filename)
+        )
 
     return sed_command
 

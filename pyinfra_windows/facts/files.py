@@ -51,7 +51,7 @@ class Sha1File(FactBase):
 
     def command(self, path):
         return (
-            'if (Test-Path "{0}") {{ ' '(Get-FileHash -Algorithm SHA1 "{0}").hash' " }}"
+            'if (Test-Path "{0}") {{ (Get-FileHash -Algorithm SHA1 "{0}").hash }}'
         ).format(path)
 
     def process(self, output):
@@ -67,7 +67,7 @@ class Sha256File(FactBase):
 
     def command(self, path):
         return (
-            'if (Test-Path "{0}") {{ ' '(Get-FileHash -Algorithm SHA256 "{0}").hash' " }}"
+            'if (Test-Path "{0}") {{ (Get-FileHash -Algorithm SHA256 "{0}").hash }}'
         ).format(path)
 
     def process(self, output):
@@ -82,7 +82,9 @@ class Md5File(FactBase):
     shell_executable = "ps"
 
     def command(self, path):
-        return ('if (Test-Path "{0}") {{ ' '(Get-FileHash -Algorithm MD5 "{0}").hash' " }}").format(
+        return (
+            'if (Test-Path "{0}") {{ (Get-FileHash -Algorithm MD5 "{0}").hash }}'
+        ).format(
             path,
         )
 

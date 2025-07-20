@@ -43,7 +43,9 @@ def make_fact_tests(folder_name):
             command = _make_command(fact.command, test_args)
 
             if "command" in test_data:
-                assert get_command_string(StringCommand(command)) == test_data["command"]
+                assert (
+                    get_command_string(StringCommand(command)) == test_data["command"]
+                )
             else:
                 warnings.warn(
                     'No command set for test: {0} (got "{1}")'.format(

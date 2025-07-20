@@ -196,9 +196,9 @@ class FakeHost:
         # the fact class, otherwise the test will hide a bug in the underlying operation.
         real_args = getfullargspec(fact_cls.command)
         for key in kwargs.keys():
-            assert (
-                key in real_args.args
-            ), f"Argument {key} is not a real argument in the `{fact_cls}.command` method"
+            assert key in real_args.args, (
+                f"Argument {key} is not a real argument in the `{fact_cls}.command` method"
+            )
 
     def get_fact(self, fact_cls, **kwargs):
         fact_key = self._get_fact_key(fact_cls)
@@ -207,7 +207,9 @@ class FakeHost:
             raise KeyError("Missing test fact data: {0}".format(fact_key))
         if kwargs:
             self._check_fact_args(fact_cls, kwargs)
-            fact_ordered_keys = {_sort_kwargs_str(key): value for key, value in fact.items()}
+            fact_ordered_keys = {
+                _sort_kwargs_str(key): value for key, value in fact.items()
+            }
             kwargs_str = _sort_kwargs_str(get_kwargs_str(kwargs))
             if kwargs_str not in fact:
                 print("Possible missing fact key: {0}".format(kwargs_str))
@@ -357,7 +359,9 @@ class patch_files:
 
         for child in child_dirs:
             full_child = path.join(dirname, child)
-            for recursive_return in self.walk(full_child, topdown, onerror, followlinks):
+            for recursive_return in self.walk(
+                full_child, topdown, onerror, followlinks
+            ):
                 yield recursive_return
 
 

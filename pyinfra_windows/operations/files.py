@@ -11,7 +11,14 @@ from pyinfra.api import FileUploadCommand, OperationError, OperationTypeError, o
 from pyinfra.api.util import get_file_sha1
 
 from pyinfra_windows.facts.server import Date
-from pyinfra_windows.facts.files import Directory, File, Link, Md5File, Sha1File, Sha256File
+from pyinfra_windows.facts.files import (
+    Directory,
+    File,
+    Link,
+    Md5File,
+    Sha1File,
+    Sha256File,
+)
 
 from .util.files import ensure_mode_int
 
@@ -74,7 +81,9 @@ def download(
         if cache_time:
             # Time on files is not tz-aware, and will be the same tz as the server's time,
             # so we can safely remove the tzinfo from Date before comparison.
-            cache_time = host.get_fact(Date).replace(tzinfo=None) - timedelta(seconds=cache_time)
+            cache_time = host.get_fact(Date).replace(tzinfo=None) - timedelta(
+                seconds=cache_time
+            )
             if info["mtime"] and info["mtime"] > cache_time:
                 download = True
 
@@ -93,7 +102,8 @@ def download(
     # If we download, always do user/group/mode as SSH user may be different
     if download:
         yield (
-            '$ProgressPreference = "SilentlyContinue"; ' "Invoke-WebRequest -Uri {0} -OutFile {1}"
+            '$ProgressPreference = "SilentlyContinue"; '
+            "Invoke-WebRequest -Uri {0} -OutFile {1}"
         ).format(src, dest)
 
         # if user or group:
@@ -337,8 +347,8 @@ def _create_remote_dir(state, host, remote_filename, user, group):
     if remote_dirname:
         yield from directory._inner(
             remote_dirname,
-            #state=state, # TODO not sure why these args are here
-            #host=host,
+            # state=state, # TODO not sure why these args are here
+            # host=host,
             user=user,
             group=group,
         )
