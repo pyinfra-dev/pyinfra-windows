@@ -6,11 +6,23 @@ from os import listdir, path
 from unittest import TestCase
 from unittest.mock import patch
 
-from pyinfra.api import FileDownloadCommand, FileUploadCommand, FunctionCommand, StringCommand
+from pyinfra.api import (
+    FileDownloadCommand,
+    FileUploadCommand,
+    FunctionCommand,
+    StringCommand,
+)
 from pyinfra.context import ctx_host, ctx_state
 from pyinfra_cli.util import json_encode
 
-from .util import FakeState, JsonTest, create_host, get_command_string, parse_value, patch_files
+from .util import (
+    FakeState,
+    JsonTest,
+    create_host,
+    get_command_string,
+    parse_value,
+    patch_files,
+)
 
 PLATFORM_NAME = platform.system()
 
@@ -31,7 +43,9 @@ def parse_commands(commands):
 
         elif isinstance(command, FunctionCommand):
             func_name = (
-                command.function if command.function == "__func__" else command.function.__name__
+                command.function
+                if command.function == "__func__"
+                else command.function.__name__
             )
             json_command = [
                 func_name,
@@ -127,7 +141,9 @@ def make_operation_tests(arg):
                             if allowed_exception:
                                 allowed_exception_names = allowed_exception.get("names")
                                 if not allowed_exception_names:
-                                    allowed_exception_names = [allowed_exception["name"]]
+                                    allowed_exception_names = [
+                                        allowed_exception["name"]
+                                    ]
 
                                 if e.__class__.__name__ not in allowed_exception_names:
                                     print("Wrong exception raised!")
@@ -146,7 +162,9 @@ def make_operation_tests(arg):
                 if noop_description is not None:
                     assert host.noop_description == noop_description
                 else:
-                    assert host.noop_description is not None, "no noop description was set"
+                    assert host.noop_description is not None, (
+                        "no noop description was set"
+                    )
                     warnings.warn(
                         'No noop_description set for test: {0} (got "{1}")'.format(
                             op_test_name,

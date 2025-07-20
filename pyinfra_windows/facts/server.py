@@ -233,7 +233,9 @@ class Hotfixes(FactBase):
     Returns the Windows hotfixes.
     """
 
-    command = "Get-CimInstance -ClassName Win32_QuickFixEngineering | Format-List -Property *"
+    command = (
+        "Get-CimInstance -ClassName Win32_QuickFixEngineering | Format-List -Property *"
+    )
 
     @staticmethod
     def process(output):
