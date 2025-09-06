@@ -29,5 +29,4 @@ class WingetPackages(FactBase):
 
     @override
     def process(self, output):
-        packages = parse_packages(WINGET_REGEX, output)
-        return packages
+        return parse_packages(WINGET_REGEX, output)
