@@ -10,7 +10,7 @@ WINGET_REGEX = r"([^\s]+)\s+([^\s]+)"
 
 
 class WingetPackages(FactBase):
-    """ Returns a dict of installed winget packages:
+    """Returns a dict of installed winget packages:
 
     .. code:: python
 

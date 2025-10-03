@@ -11,6 +11,12 @@ from pyinfra.operations.util.packaging import PkgInfo, ensure_packages
 from pyinfra_windows.facts.winget import WingetPackages
 
 
+def _package_format_fn(name: str, operator: str, version: str):
+    return "winget install --no-upgrade --silent --exact {name} {operator} {version};".format(
+        name=name, operator=operator, version=version
+    )
+
+
 @operation()
 def packages(packages: str | list[str] | None = None, present=True, latest=False):
     """
@@ -47,8 +53,7 @@ def packages(packages: str | list[str] | None = None, present=True, latest=False
 
     requested_packages: list[PkgInfo] = []
     for p in packages:
-
-        if present: 
+        if present:
             # this is a hack to support winget istall package --version version
             # each package must have it's own winget install command
             p = p.replace("=", "--version")
@@ -58,11 +63,13 @@ def packages(packages: str | list[str] | None = None, present=True, latest=False
                 operator=package_info.operator,
                 version=package_info.version,
                 url="",
-                inst_vers_template="winget install --no-upgrade --silent --exact {name} {operator} {version};",
+                inst_vers_format_fn=_package_format_fn,
             )
             requested_packages.append(pkg_info_wrapper)
         else:
-            raise RuntimeError("Uninstalling winget packages is not currently supported.")
+            raise RuntimeError(
+                "Uninstalling winget packages is not currently supported."
+            )
 
     # uninstall_command = (
     #    "winget uninstall --silent --exact --id {package_id}{version_cmd};"
@@ -76,4 +83,3 @@ def packages(packages: str | list[str] | None = None, present=True, latest=False
         install_command="",
         uninstall_command="",
     )
-

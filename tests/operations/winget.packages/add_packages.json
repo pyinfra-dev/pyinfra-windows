@@ -3,6 +3,6 @@
         "winget.WingetPackages": {}
     },
     "commands": [
-        "'winget install --silent --exact --id Notepad++.Notepad++;'"
+        "Notepad++.Notepad++"
     ]
 }

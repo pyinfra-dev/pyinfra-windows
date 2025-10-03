@@ -1,5 +1,5 @@
 
 format:
-	hatch run test:ruff format
+	uv run ruff format
 test:
-	hatch run test:all
+	uv run pytest
