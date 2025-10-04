@@ -1,27 +1,25 @@
+[project]
+name = "pyinfra-windows"
+version = "0.0.1"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyinfra>3.5", # 3.5.1 introduces packaging support for winget
+    "pywinrm>=0.5"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1,<9",
+]
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
-[project]
-version = "0.0.1"
-name = "pyinfra-windows"
-description = ""
-requires-python = ">=3.9"
-dependencies = [
-  "pyinfra==3.0.2"
-]
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyinfra_windows"]
 
 [project.entry-points."pyinfra.connectors"]
 winrm = "pyinfra_windows.connectors.winrm:WinRMConnector"
-
-[tool.hatch.build.targets.wheel]
-  packages = ["pyinfra_windows/"]
-
-[tool.hatch.envs.test]
-dependencies = [
-  "pyinfra",
-  "pytest"
-]
-
-[tool.hatch.envs.test.scripts]
-all = "pytest"

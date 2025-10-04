@@ -226,7 +226,6 @@ class WinRMConnector(BaseConnector):
                 "{0}>>> {1}".format(self.host.print_prefix, command),
                 err=True,
             )
-
         if not shell_executable:
             shell_executable = "ps"
         logger.debug("shell_executable:%s", shell_executable)

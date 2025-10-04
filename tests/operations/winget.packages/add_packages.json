@@ -1,0 +1,8 @@
+{"args": ["Notepad++.Notepad++"],
+    "facts": {
+        "winget.WingetPackages": {}
+    },
+    "commands": [
+        "Notepad++.Notepad++"
+    ]
+}
