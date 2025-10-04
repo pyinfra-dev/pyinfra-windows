@@ -39,9 +39,9 @@ def packages(packages: str | list[str] | None = None, present=True, latest=False
             packages=["Notepad++.Notepad++"],
         )
     """
-    # TODO when an older version of
-    # exists and a newer verision is requested
-    # winget still runs but raises and error
+    # TODO when an older version of a package
+    # exists and a newer version is requested
+    # winget still runs but raises an error
 
     if not packages:
         return
@@ -54,7 +54,7 @@ def packages(packages: str | list[str] | None = None, present=True, latest=False
     requested_packages: list[PkgInfo] = []
     for p in packages:
         if present:
-            # this is a hack to support winget istall package --version version
+            # this is a hack to support winget install package --version version
             # each package must have it's own winget install command
             p = p.replace("=", "--version")
             package_info = PkgInfo.from_possible_pair(p, "--version")
