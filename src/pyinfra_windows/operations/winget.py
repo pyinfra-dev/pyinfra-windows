@@ -11,18 +11,20 @@ from pyinfra.operations.util.packaging import PkgInfo, ensure_packages
 from pyinfra_windows.facts.winget import WingetPackages
 
 
-def _package_format_fn(name: str, operator: str, version: str):
+def _package_install_format_fn(name: str, operator: str, version: str):
     return "winget install --no-upgrade --silent --exact {name} {operator} {version};".format(
         name=name, operator=operator, version=version
     )
+def _package_uninstall_format_fn(name: str, operator: str, version: str):
+    return "winget uninstall --silent --exact {name} {operator} {version};".format(name=name, operator=operator, version=version)
 
 
 @operation()
-def packages(packages: str | list[str] | None = None, present=True, latest=False):
+def packages(packages: str | list[str] | None = None, present=True):
     """
     Add/remove/update ``winget`` packages.
 
-    + packages: list of packages to ensure. Must be specified via package ids.
+    + packages: list of packages to ensure. Must be specified via winget package ids.
     + present: whether the packages should be installed
 
     Versions:
@@ -53,27 +55,25 @@ def packages(packages: str | list[str] | None = None, present=True, latest=False
 
     requested_packages: list[PkgInfo] = []
     for p in packages:
+        if "=" not in p:
+            raise ValueError("winget packages must be explicitly versioned [package]=[version].")
+        inst_vers_format_fn = None
         if present:
-            # this is a hack to support winget install package --version version
-            # each package must have it's own winget install command
-            p = p.replace("=", "--version")
-            package_info = PkgInfo.from_possible_pair(p, "--version")
-            pkg_info_wrapper = PkgInfo(
-                name=package_info.name,
-                operator=package_info.operator,
-                version=package_info.version,
-                url="",
-                inst_vers_format_fn=_package_format_fn,
-            )
-            requested_packages.append(pkg_info_wrapper)
+            inst_vers_format_fn = _package_install_format_fn
         else:
-            raise RuntimeError(
-                "Uninstalling winget packages is not currently supported."
-            )
-
-    # uninstall_command = (
-    #    "winget uninstall --silent --exact --id {package_id}{version_cmd};"
-    # )
+            inst_vers_format_fn = _package_uninstall_format_fn
+        # this is a hack to support winget install package --version version
+        # each package must have it's own winget install command
+        p = p.replace("=", "--version")
+        package_info = PkgInfo.from_possible_pair(p, "--version")
+        pkg_info_wrapper = PkgInfo(
+            name=package_info.name,
+            operator=package_info.operator,
+            version=package_info.version,
+            url="",
+            inst_vers_format_fn=inst_vers_format_fn,
+        )
+        requested_packages.append(pkg_info_wrapper)
 
     yield from ensure_packages(
         host,
