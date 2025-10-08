@@ -12,11 +12,21 @@ from pyinfra_windows.facts.winget import WingetPackages
 
 
 def _package_install_format_fn(name: str, operator: str, version: str):
+    if version == "_no_version":
+        return "winget install --no-upgrade --silent --exact {name};".format(
+            name=name,
+        )
     return "winget install --no-upgrade --silent --exact {name} {operator} {version};".format(
         name=name, operator=operator, version=version
     )
+
+
 def _package_uninstall_format_fn(name: str, operator: str, version: str):
-    return "winget uninstall --silent --exact {name} {operator} {version};".format(name=name, operator=operator, version=version)
+    if version == "_no_version":
+        return "winget uninstall --silent --exact {name};".format(name=name)
+    return "winget uninstall --silent --exact {name} {operator} {version};".format(
+        name=name, operator=operator, version=version
+    )
 
 
 @operation()
@@ -55,8 +65,6 @@ def packages(packages: str | list[str] | None = None, present=True):
 
     requested_packages: list[PkgInfo] = []
     for p in packages:
-        if "=" not in p:
-            raise ValueError("winget packages must be explicitly versioned [package]=[version].")
         inst_vers_format_fn = None
         if present:
             inst_vers_format_fn = _package_install_format_fn
@@ -66,10 +74,11 @@ def packages(packages: str | list[str] | None = None, present=True):
         # each package must have it's own winget install command
         p = p.replace("=", "--version")
         package_info = PkgInfo.from_possible_pair(p, "--version")
+        # we use "_no_version" when version is not specified
         pkg_info_wrapper = PkgInfo(
             name=package_info.name,
             operator=package_info.operator,
-            version=package_info.version,
+            version=package_info.version or "_no_version",
             url="",
             inst_vers_format_fn=inst_vers_format_fn,
         )
