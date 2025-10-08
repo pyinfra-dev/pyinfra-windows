@@ -1,8 +1,10 @@
-{"args": ["Notepad++.Notepad++"],
+{"args": [[
+	"Notepad++.Notepad++", "Microsoft.DotNet.SDK.7=7.0.200"
+	]],
     "facts": {
         "winget.WingetPackages": {}
     },
     "commands": [
-        "Notepad++.Notepad++"
+        "'winget install --no-upgrade --silent --exact Notepad++.Notepad++;' 'winget install --no-upgrade --silent --exact Microsoft.DotNet.SDK.7 --version 7.0.200;'"
     ]
 }
