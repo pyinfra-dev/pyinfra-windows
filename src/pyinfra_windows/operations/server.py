@@ -57,3 +57,31 @@ def reboot():
     Restart the server.
     """
     yield "Restart-Computer -Force"
+
+@operation(is_idempotent=False)
+def feature(feature_name, enabled=True):
+    """
+    Enable/disable Windows features.
+
+    + feature_name: name of the Windows feature to manage
+    + enabled: whether the feature should be enabled or disabled
+
+    **Example:**
+
+    .. code:: python
+
+        windows.feature(
+            name="Enable Hyper-V",
+            feature_name="Hyper-V",
+            enabled=True,
+        )
+    """
+
+    if enabled:
+        yield "Enable-WindowsOptionalFeature -Online -FeatureName {0} -NoRestart".format(
+            feature_name
+        )
+    else:
+        yield "Disable-WindowsOptionalFeature -Online -FeatureName {0} -NoRestart".format(
+            feature_name
+        )
