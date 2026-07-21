@@ -11,8 +11,7 @@ class Home(FactBase):
     Returns the home directory of the current user.
     """
 
-    command = "echo %HOMEPATH%"
-    shell_executable = "cmd"
+    command = "$HOME"
 
     @staticmethod
     def process(output):
@@ -182,8 +181,10 @@ class Date(FactBase):
     Returns the current datetime on the server.
     """
 
-    command = "echo %date%-%time%"
-    shell_executable = "cmd"
+    command = (
+        "[DateTimeOffset]::Now.ToString('yyyy-MM-ddTHH:mm:sszzz', "
+        "[Globalization.CultureInfo]::InvariantCulture)"
+    )
     default = datetime.now
 
     @staticmethod
@@ -217,15 +218,17 @@ class Where(FactBase):
     Returns the full path for a command, if available.
     """
 
-    shell_executable = "cmd"
-
     @staticmethod
     def command(command):
-        return "where {0}".format(command)
+        command = str(command).replace("'", "''")
+        return (
+            "(Get-Command -Name '{0}' -CommandType Application "
+            "-ErrorAction SilentlyContinue | Select-Object -First 1).Source"
+        ).format(command)
 
     @staticmethod
     def process(output):
-        return output[0].rstrip()
+        return output[0].rstrip() if output else None
 
 
 class Hotfixes(FactBase):

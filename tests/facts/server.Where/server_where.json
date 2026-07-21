@@ -1,6 +1,6 @@
 {
     "arg": "systeminfo.exe",
-    "command": "where systeminfo.exe",
-    "output": ["C:\\Windows\\System32\\systeminfo.exe", ""],
-    "fact": "C:\\Windows\\System32\\systeminfo.exe"
+    "command": "(Get-Command -Name 'systeminfo.exe' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source",
+    "output": ["C:\\Windows\\system32\\systeminfo.exe"],
+    "fact": "C:\\Windows\\system32\\systeminfo.exe"
 }

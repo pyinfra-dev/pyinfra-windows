@@ -1,6 +1,6 @@
 {
     "arg": "some_non_existing_file",
-    "command": "where some_non_existing_file",
-    "output": [""],
-    "fact": ""
+    "command": "(Get-Command -Name 'some_non_existing_file' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source",
+    "output": [],
+    "fact": null
 }

@@ -1,5 +1,5 @@
 {
-    "command": "echo %HOMEPATH%",
-    "output": ["\\Users\\vagrant"],
-    "fact": "\\Users\\vagrant"
+    "command": "$HOME",
+    "output": ["C:\\Users\\vagrant"],
+    "fact": "C:\\Users\\vagrant"
 }
