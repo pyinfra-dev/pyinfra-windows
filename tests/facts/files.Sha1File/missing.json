@@ -1,0 +1,6 @@
+{
+    "arg": ["C:\\temp\\missing.txt"],
+    "command": "if (Test-Path \"C:\\temp\\missing.txt\") { (Get-FileHash -Algorithm SHA1 \"C:\\temp\\missing.txt\").hash }",
+    "output": [],
+    "fact": null
+}

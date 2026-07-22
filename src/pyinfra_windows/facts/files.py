@@ -55,7 +55,7 @@ class Sha1File(FactBase):
         ).format(path)
 
     def process(self, output):
-        return output[0] if not output else None
+        return output[0].lower() if output else None
 
 
 class Sha256File(FactBase):
@@ -71,7 +71,7 @@ class Sha256File(FactBase):
         ).format(path)
 
     def process(self, output):
-        return output[0] if len(output[0]) > 0 else None
+        return output[0].lower() if output else None
 
 
 class Md5File(FactBase):
@@ -89,4 +89,4 @@ class Md5File(FactBase):
         )
 
     def process(self, output):
-        return output[0] if len(output[0]) > 0 else None
+        return output[0].lower() if output else None
