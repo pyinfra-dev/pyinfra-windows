@@ -18,6 +18,7 @@ from pyinfra_windows.facts.files import (
     Md5File,
     Sha1File,
     Sha256File,
+    TempDir,
 )
 
 from .util.files import ensure_mode_int
@@ -200,6 +201,7 @@ def put(
 
     mode = ensure_mode_int(mode)
     remote_file = host.get_fact(File, path=dest)
+    temp_dir = host.get_fact(TempDir)
 
     if create_remote_dir:
         yield from _create_remote_dir(state, host, dest, user, group)
@@ -209,7 +211,7 @@ def put(
         yield FileUploadCommand(
             local_file,
             dest,
-            remote_temp_filename=state.get_temp_filename(dest),
+            remote_temp_filename=host.get_temp_filename(dest, temp_directory=temp_dir),
         )
 
         # if user or group:
@@ -228,7 +230,9 @@ def put(
             yield FileUploadCommand(
                 local_file,
                 dest,
-                remote_temp_filename=state.get_temp_filename(dest),
+                remote_temp_filename=host.get_temp_filename(
+                    dest, temp_directory=temp_dir
+                ),
             )
 
             # if user or group:

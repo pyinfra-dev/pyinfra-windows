@@ -61,7 +61,12 @@ def parse_commands(commands):
                     data = data.decode()
             else:
                 data = str(command.src)
-            json_command = ["upload", data, str(command.dest)]
+            json_command = [
+                "upload",
+                data,
+                str(command.dest),
+                command.remote_temp_filename,
+            ]
 
         elif isinstance(command, FileDownloadCommand):
             json_command = ["download", str(command.src), str(command.dest)]

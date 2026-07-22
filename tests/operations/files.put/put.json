@@ -1,0 +1,29 @@
+{
+    "args": [
+        "sshd_config",
+        "C:\\ProgramData\\ssh\\sshd_config"
+    ],
+    "kwargs": {
+        "create_remote_dir": false
+    },
+    "facts": {
+        "files.File": {
+            "path=C:\\ProgramData\\ssh\\sshd_config": null
+        },
+        "files.TempDir": "C:\\Windows\\Temp"
+    },
+    "local_files": {
+        "files": {
+            "sshd_config": "contents"
+        }
+    },
+    "commands": [
+        [
+            "upload",
+            "/sshd_config",
+            "C:\\ProgramData\\ssh\\sshd_config",
+            "C:\\Windows\\Temp/_tempfile_"
+        ]
+    ],
+    "idempotent": false
+}

@@ -53,9 +53,6 @@ class FakeState:
         self.inventory = Inventory(([], {}))
         self.config = Config()
 
-    def get_temp_filename(*args):
-        return "_tempfile_"
-
 
 def parse_value(value):
     """
@@ -183,8 +180,14 @@ class FakeHost:
     def noop(self, description):
         self.noop_description = description
 
-    def get_temp_filename(*args):
-        return "_tempfile_"
+    def get_temp_filename(
+        self,
+        hash_key=None,
+        hash_filename=True,
+        *,
+        temp_directory=None,
+    ):
+        return f"{temp_directory}/_tempfile_"
 
     @staticmethod
     def _get_fact_key(fact_cls):
