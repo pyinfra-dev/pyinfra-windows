@@ -1,0 +1,33 @@
+{
+    "args": [
+        "somefile.txt.j2",
+        "C:\\ProgramData\\somefile.txt"
+    ],
+    "kwargs": {
+        "port": 2222
+    },
+    "local_files": {
+        "files": {
+            "somefile.txt.j2": "Port {{ port }}\n"
+        },
+        "dirs": {}
+    },
+    "facts": {
+        "files.File": {
+            "path=C:\\ProgramData\\somefile.txt": null
+        },
+        "files.Directory": {
+            "path=C:\\ProgramData": true
+        },
+        "files.TempDir": "C:\\Windows\\Temp"
+    },
+    "commands": [
+        [
+            "upload",
+            "Port 2222\n",
+            "C:\\ProgramData\\somefile.txt",
+            "C:\\Windows\\Temp/_tempfile_"
+        ]
+    ],
+    "idempotent": false
+}

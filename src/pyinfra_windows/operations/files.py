@@ -4,11 +4,17 @@ The windows_files module handles windows filesystem state, file uploads and temp
 
 import ntpath
 import os
+import sys
+import traceback
 from datetime import timedelta
+from io import StringIO
+from typing import IO, Any
+
+from jinja2 import TemplateRuntimeError, TemplateSyntaxError, UndefinedError
 
 from pyinfra import host, state
 from pyinfra.api import FileUploadCommand, OperationError, OperationTypeError, operation
-from pyinfra.api.util import get_file_sha1
+from pyinfra.api.util import get_file_io, get_file_sha1, get_template
 
 from pyinfra_windows.facts.server import Date
 from pyinfra_windows.facts.files import (
@@ -255,6 +261,123 @@ def put(
 
             if not changed:
                 host.noop("file {0} is already uploaded".format(dest))
+
+
+@operation()
+def template(
+    src: str | IO[Any],
+    dest: str,
+    user: str | None = None,
+    group: str | None = None,
+    mode: str | None = None,
+    create_remote_dir: bool = True,
+    jinja_env_kwargs: dict[str, Any] | None = None,
+    **data,
+):
+    '''
+    Generate a template using jinja2 and write it to the remote system.
+
+    + src: template filename or IO-like object
+    + dest: remote filename
+    + user: user to own the files
+    + group: group to own the files
+    + mode: permissions of the files
+    + create_remote_dir: create the remote directory if it doesn't exist
+    + jinja_env_kwargs: keyword arguments to be passed into the jinja Environment()
+
+    ``create_remote_dir``:
+        If the remote directory does not exist it will be created using the same
+        user & group as passed to ``files.put``. The mode will *not* be copied over,
+        if this is required call ``files.directory`` separately.
+
+    ``jinja_env_kwargs``:
+        To have more control over how jinja2 renders your template, you can pass
+        a dict with arguments that will be passed as keyword args to the jinja2
+        `Environment() <https://jinja.palletsprojects.com/en/3.0.x/api/#jinja2.Environment>`_.
+
+    The ``host``, ``state``, and ``inventory`` objects will be automatically passed to the template.
+    To pass additional data or variables, explicitly add them as keyword arguments to the operation
+    call itself.
+
+    Notes:
+        Common convention is to store templates in a "templates" directory and
+        have a filename suffix with '.j2' (for jinja2).
+
+        The default template lookup directory (used with jinjas ``extends``, ``import`` and
+        ``include`` statements) is the current working directory.
+
+        For information on the template syntax, see
+        `the jinja2 docs <https://jinja.palletsprojects.com>`_.
+
+    **Examples:**
+
+    .. code:: python
+
+        windows_files.template(
+            name="Create a templated file",
+            src="templates/somefile.conf.j2",
+            dest="C:\\ProgramData\\somefile.conf",
+        )
+
+        # To pass variables to the template file, add them to the operation call.
+        windows_files.template(
+            name="Create a templated file",
+            src="templates/somefile.conf.j2",
+            dest="C:\\ProgramData\\somefile.conf",
+            foo_variable="This is some foo variable contents",
+        )
+    '''
+
+    if not hasattr(src, "read") and state.cwd:
+        src = os.path.join(state.cwd, src)
+
+    # Ensure host/state/inventory are available inside templates (if not set)
+    data.setdefault("host", host)
+    data.setdefault("state", state)
+    data.setdefault("inventory", state.inventory)
+
+    # Render and make file-like its output
+    try:
+        output = get_template(src, jinja_env_kwargs).render(data)
+    except (TemplateRuntimeError, TemplateSyntaxError, UndefinedError) as e:
+        trace_frames = [
+            frame
+            for frame in traceback.extract_tb(sys.exc_info()[2])
+            if frame[2] in ("template", "<module>", "top-level template code")
+        ]
+
+        line_number = trace_frames[-1][1]
+
+        # Read the line in question and one above/below for nicer debugging
+        with get_file_io(src, "r") as f:
+            template_lines = f.readlines()
+
+        template_lines = [line.strip() for line in template_lines]
+        relevant_lines = template_lines[max(line_number - 2, 0) : line_number + 1]
+
+        raise OperationError(
+            "Error in template: {} (L{}): {}\n...\n{}\n...".format(
+                src,
+                line_number,
+                e,
+                "\n".join(relevant_lines),
+            ),
+        ) from None
+
+    output_file = StringIO(output)
+    # Set the template attribute for nicer debugging
+    output_file.template = src  # type: ignore[attr-defined]
+
+    # Pass to the put function
+    yield from put._inner(
+        src=output_file,
+        dest=dest,
+        user=user,
+        group=group,
+        mode=mode,
+        add_deploy_dir=False,
+        create_remote_dir=create_remote_dir,
+    )
 
 
 @operation()
